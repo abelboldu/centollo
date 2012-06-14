@@ -80,7 +80,7 @@ def which(program):
         return exe_file
   return None
 
-def main:
+def main():
 
   #
   # Inital checks
@@ -88,7 +88,7 @@ def main:
 
   # Check required tools
   for tool in tools:
-    if not which(t):
+    if not which(tool):
       print("ERROR: "+tool+" not installed. Exiting.")
       exit(2)
 
@@ -111,7 +111,7 @@ def main:
 
   # Mount loop
   try:
-    call(["mount","-o","loop",isofile,tmpdir+"/iso"])
+    call(["mount","-o","loop",options.isofile,tmpdir+"/iso"])
   except:
     print("ERROR: Couldn't mount ISO file "+isofile)
     exit(3)
@@ -132,14 +132,16 @@ def main:
   #
 
   print("Updating comps.xml...")
-  if os.path.isfile(compsfile):
-    call(["cp",compsfile,tmpdir+"/newiso/repodata/"])
+  if os.path.isfile(options.compsfile):
+    call(["cp",options.compsfile,tmpdir+"/newiso/repodata/comps.xml"])
   else:
     updaterepo = False
     print("WARNING: Not updating comps.xml")
 
   # Add extra packages
-  
+  print("Copying extra packages")
+  if os.path.isdir("packages"):
+    pass
   # Add grub splash
   # Add isolinux splash
   # Add isolinux boot msg
@@ -152,10 +154,8 @@ def main:
   # Implant md5
   # Cleanup
 
-
-
 if __name__ == "__main__":
   before = time.time()
-  main(session)
+  main()
   after = time.time()
-  print("SUCCESS! ISO generation took: "+((after-before)/60)+" minutes.")
+  print("SUCCESS! ISO generation took: "+str((after-before)/60)+" minutes.")
