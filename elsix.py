@@ -21,15 +21,16 @@ class MyOptionParser(OptionParser):
       self.error("%s must be under or equal %s" % (option1,option2) )
 
 parser = MyOptionParser(description="elsix ISO builder")
-parser.add_option("-i", "--iso", dest="isofile", help="input iso file")
-
+parser.add_option("-i", "--iso", dest="isofile", help="Input iso file")
 parser.add_option("-o", "--out", default="output.iso", dest="out", help="Output file (default: output.iso)")
+parser.add_option("-c", "--comps", default="resources/comps.xml", dest="compsfile", help="comps.xml file")
 parser.add_option("-I", "--implantmd5", action="store_true",dest="implantmd5", default=False, help="Implant iso md5")
 
 (options, args) = parser.parse_args()
 
 # Abort if iso is not specified
-# parser.check_required("-i")
+parser.check_required("-i")
+parser.check_required("-o")
 
 tmpdir = "/tmp/elsix"
 tools = ["createrepo","xz","find","cpio","which","mkisofs","mksquashfs","rpm2cpio"]
