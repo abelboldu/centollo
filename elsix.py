@@ -3,7 +3,7 @@
 import sys, os
 import rpm
 from subprocess import call
-import time
+import time, datetime
 from optparse import OptionParser
 
 class MyOptionParser(OptionParser):
@@ -23,7 +23,15 @@ class MyOptionParser(OptionParser):
 parser = MyOptionParser(description="elsix ISO builder")
 parser.add_option("-i", "--iso", dest="isofile", help="Input iso file")
 parser.add_option("-o", "--out", default="output.iso", dest="out", help="Output file (default: output.iso)")
+parser.add_option("-p", "--packages", default="./packages",dest="packages", help="RPM packages directory")
 parser.add_option("-c", "--comps", default="resources/comps.xml", dest="compsfile", help="comps.xml file")
+parser.add_option("-s", "--splash", default="resources/splash.jpg", dest="isolinuxsplash", help="isolinux splash")
+
+parser.add_option("-C", "--cfg", default="resources/isolinux.cfg", dest="isolinuxcfg", help="isolinux cfg")
+parser.add_option("-n", "--name", default="", dest="name", help="System name")
+parser.add_option("-v", "--version", default="", dest="version", help="System version")
+parser.add_option("-b", "--bugs", default="", dest="bugs_url", help="Bugs url")
+name version arch
 parser.add_option("-I", "--implantmd5", action="store_true",dest="implantmd5", default=False, help="Implant iso md5")
 
 (options, args) = parser.parse_args()
@@ -35,29 +43,6 @@ parser.check_required("-o")
 tmpdir = "/tmp/elsix"
 tools = ["createrepo","xz","find","cpio","which","mkisofs","mksquashfs","rpm2cpio"]
 updaterepo = True
-
-def getRPMInfo(rpmPath):
-  ts = rpm.ts()
-  try:
-    fdno = os.open(rpmPath, os.O_RDONLY)
-    hdr = ts.hdrFromFdno(fdno)
-    os.close(fdno)
-  except:
-    return False
-
-  rpmInfo = {}
-  rpmInfo['name'] = hdr['name']
-  rpmInfo['summary'] = hdr['summary']
-  rpmInfo['description'] = hdr['description']
-  rpmInfo['release'] = hdr['release']
-  rpmInfo['version'] = hdr['version']
-  rpmInfo['arch'] = hdr['arch']
-  rpmInfo['epoch'] = hdr['epoch']
-  rpmInfo['buildtime'] = hdr['buildtime']
-  rpmInfo['size'] = hdr['size']
-  rpmInfo['archivesize'] = hdr['archivesize']
-
-  return rpmInfo
 
 def check_root():
   """ returns True if user is root, false otherwise """
@@ -79,6 +64,14 @@ def which(program):
       if is_exe(exe_file):
         return exe_file
   return None
+
+def branding(file,product_name,product_version,bugs_url,arch):
+    outfile = open(file,'w')
+    outfile.write(datetime.datetime.now().strftime('%Y%m%d')+'0001.'+arch+"\n")
+    outfile.write(product_name+"\n")
+    outfile.write(product_version+"\n")
+    outfile.write(bugs_url)
+    outfile.close()
 
 def main():
 
@@ -139,16 +132,76 @@ def main():
     print("WARNING: Not updating comps.xml")
 
   # Add extra packages
-  print("Copying extra packages")
-  if os.path.isdir("packages"):
-    pass
-  # Add grub splash
-  # Add isolinux splash
-  # Add isolinux boot msg
-  # Add isolinux options
+  print("Copying extra packages...")
+  if os.path.isdir(options.packages):
+    try:
+      call(["cp","-r",options.packages,tmpdir+"/newiso/Packages"])
+    except:
+      print("ERROR: Cannot copy extra packages.")
+      exit(3)   
+  
+  # Add boot files
+  print("Copying isolinux splash...")
+  if os.path.isdir(options.isolinuxsplash):
+    call(["cp",options.isolinuxsplash,tmpdir+"/newiso/isolinux"])
+  else:
+    print("WARNING: Cannot copy boot splash.")
+  # grub customized in redhat-logos
+    
+  print("Copying isolinux.cfg...")
+  if os.path.isdir(options.isolinuxcfg):
+    call(["cp",options.isolinuxcfg,tmpdir+"/newiso/isolinux"])
+  else:
+    print("WARNING: Cannot copy isolinux.cfg")
+
   # Update yum repo
+  if updaterepo:
+    print("Updating packages repository...")
+    try:
+      call(["cd",tmpdir+"/newiso","&&","createrepo","-g","repodata/comps.xml","."])
+    except:
+      print("WARNING: Cannot create repository")
+  else:
+    print("Not updating packages repository.")
+
   # Custom initrd
+  print("Branding initrd...")
+  try:
+    call(["mkdir","-p",tmpdir+"/initrd.dir"])
+    # Unpack
+    call(["cd",tmpdir+"/initrd.dir","&&","xz","--decompress","--format=lzma","--stout",tmpdir+"newiso/isolinux/initrd.img",
+          "|","cpio","--quiet","--iudm"])
+    # Brand .buildstamp
+    branding(tmpdir+"/initrd.dir/.buildstamp",options.name,options.version,options.bugs_url,options.arch)
+    # Repack
+    call(["cd",tmpdir+"/initrd.dir","&&","find","./","|","cpio","--quiet","-H","newc","-o",
+          "|","xz","--format=lzma",">",tmpdir+"/newiso/isolinux/initrd.img"])
+    # Cleanup
+    if options.cleanup:
+      call(["rm","-rf",tmpdir+"/initrd.dir"])
+  except:
+    print("ERROR: Cannot brand initrd")
+    exit(3)
+
+
   # Custom stage2
+  print("Branding install.img...")
+  try:
+    call(["mkdir","-p",tmpdir+"/initrd.dir"])
+    # Unpack
+    call(["cd",tmpdir+"/initrd.dir","&&","xz","--decompress","--format=lzma","--stout",tmpdir+"newiso/isolinux/initrd.img",
+          "|","cpio","--quiet","--iudm"])
+    # Brand .buildstamp
+    branding(tmpdir+"/initrd.dir/.buildstamp",options.name,options.version,options.bugs_url,options.arch)
+    # Repack
+    call(["cd",tmpdir+"/initrd.dir","&&","find","./","|","cpio","--quiet","-H","newc","-o",
+          "|","xz","--format=lzma",">",tmpdir+"/newiso/isolinux/initrd.img"])
+    # Cleanup
+    if options.cleanup:
+      call(["rm","-rf",tmpdir+"/initrd.dir"])
+  except:
+    print("ERROR: Cannot brand initrd")
+    exit(3) 
   # Custom release notes
   # Create ISO
   # Implant md5
