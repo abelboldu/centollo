@@ -122,7 +122,7 @@ def main():
 
   print("Copying ISO content...")
   try:
-    call(["cp","-r",tmpdir+"/iso",tmpdir+"/newiso"])
+    call(["cp","-r",tmpdir+"/iso/*",tmpdir+"/newiso/"])
   except Exception, e:
     print("ERROR: Cannot copy ISO content to "+tmpdir+"/iso")
     print e
@@ -180,13 +180,13 @@ def main():
   try:
     call(["mkdir","-p",tmpdir+"/initrd.dir"])
     # Unpack
-    call(["cd",tmpdir+"/initrd.dir","&&","xz","--decompress","--format=lzma","--stout",tmpdir+"iso/isolinux/initrd.img",
-          "|","cpio","--quiet","--iudm"],shell=True)
+    call(["xz --decompress --format=lzma --stdout ../iso/isolinux/initrd.img | \
+           cpio --quiet -iudm"],cwd=tmpdir+"/initrd.dir",shell=True)
     # Brand .buildstamp
     branding(tmpdir+"/initrd.dir/.buildstamp",options.name,options.version,options.bugs_url,arch)
     # Repack
-    call(["cd",tmpdir+"/initrd.dir","&&","find","./","|","cpio","--quiet","-H","newc","-o",
-          "|","xz","--format=lzma",">",tmpdir+"/newiso/isolinux/initrd.img"],shell=True)
+    call(["find ./ | cpio --quiet -H newc -o | xz --format=lzma > \
+      "+tmpdir+"/newiso/isolinux/initrd.img"],cwd=tmpdir+"/initrd.dir",shell=True)
     # Cleanup
     if options.cleanup:
       call(["rm","-rf",tmpdir+"/initrd.dir"])
@@ -236,7 +236,7 @@ def main():
     # Relative paths not working here
     call(["cd "+tmpdir+"/newiso && mkisofs -joliet-long -T -b isolinux/isolinux.bin -c isolinux/boot.cat \
           -input-charset iso8859-1 -no-emul-boot -boot-load-size 4 -boot-info-table -R -m TRANS.TBL \
-          -o "+options.output+" . >/dev/null 2>&1"],cwd=tmpdir+"/newiso",shell=True)
+          -o "+os.getcwd()+"/"+options.output+" . >/dev/null 2>&1"],shell=True)
   except Exception, e:
     print("ERROR: Cannot create ISO")
     print e
