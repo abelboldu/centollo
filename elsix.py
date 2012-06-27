@@ -233,8 +233,10 @@ def main():
   # Create ISO
   print("Creating ISO...")
   try:
-    call(["mkisofs","-R","-J","-T","-b",tmpdir+"/newiso/isolinux/isolinux.bin","-c",tmpdir+"/newiso/isolinux/boot.cat",
-          "-no-emul-boot","-boot-load-size","4","-boot-info-table","-o",options.output,"."],cwd=tmpdir+"/newiso",shell=True)
+    # Relative paths not working here
+    call(["cd "+tmpdir+"/newiso && mkisofs -joliet-long -T -b isolinux/isolinux.bin -c isolinux/boot.cat \
+          -input-charset iso8859-1 -no-emul-boot -boot-load-size 4 -boot-info-table -R -m TRANS.TBL \
+          -o "+options.output+" . >/dev/null 2>&1"],cwd=tmpdir+"/newiso",shell=True)
   except Exception, e:
     print("ERROR: Cannot create ISO")
     print e
