@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os
-import rpm
+import dircache
 from subprocess import call
 import time, datetime
 from optparse import OptionParser
@@ -22,17 +22,20 @@ class MyOptionParser(OptionParser):
 
 parser = MyOptionParser(description="elsix ISO builder")
 parser.add_option("-i", "--iso", dest="isofile", help="Input iso file")
-parser.add_option("-o", "--out", default="output.iso", dest="out", help="Output file (default: output.iso)")
+parser.add_option("-o", "--out", default="output.iso", dest="output", help="Output file (default: output.iso)")
 parser.add_option("-p", "--packages", default="./packages",dest="packages", help="RPM packages directory")
 parser.add_option("-c", "--comps", default="resources/comps.xml", dest="compsfile", help="comps.xml file")
 parser.add_option("-s", "--splash", default="resources/splash.jpg", dest="isolinuxsplash", help="isolinux splash")
-
 parser.add_option("-C", "--cfg", default="resources/isolinux.cfg", dest="isolinuxcfg", help="isolinux cfg")
 parser.add_option("-n", "--name", default="", dest="name", help="System name")
 parser.add_option("-v", "--version", default="", dest="version", help="System version")
 parser.add_option("-b", "--bugs", default="", dest="bugs_url", help="Bugs url")
-name version arch
-parser.add_option("-I", "--implantmd5", action="store_true",dest="implantmd5", default=False, help="Implant iso md5")
+parser.add_option("-a", "--anaconda", default="", dest="anaconda", help="Custom anaconda package")
+parser.add_option("-l", "--redhatlogos", default="", dest="redhatlogos", help="Custom anaconda package")
+parser.add_option("-r", "--relnotes", default="resources/release-notes", dest="relnotes", help="Custom anaconda package")
+parser.add_option("--implantmd5", action="store_true",dest="implantmd5", default=False, help="Implant iso md5")
+parser.add_option("--clean", action="store_true",dest="cleanup", default=False, help="Clean environment.")
+
 
 (options, args) = parser.parse_args()
 
@@ -42,7 +45,7 @@ parser.check_required("-o")
 
 tmpdir = "/tmp/elsix"
 tools = ["createrepo","xz","find","cpio","which","mkisofs","mksquashfs","rpm2cpio"]
-updaterepo = True
+
 
 def check_root():
   """ returns True if user is root, false otherwise """
@@ -75,6 +78,8 @@ def branding(file,product_name,product_version,bugs_url,arch):
 
 def main():
 
+  updaterepo = True
+  arch = 'x86_64'
   #
   # Inital checks
   #
@@ -98,15 +103,17 @@ def main():
   # Make tmp dir
   try:
     call(["mkdir","-p",tmpdir+"/iso"])
-  except:
+  except Exception, e:
     print("ERROR: Cannot create temporary folder "+tmpdir+"/iso")
+    print e
     exit(3)
 
   # Mount loop
   try:
     call(["mount","-o","loop",options.isofile,tmpdir+"/iso"])
-  except:
+  except Exception, e:
     print("ERROR: Couldn't mount ISO file "+isofile)
+    print e
     exit(3)
 
   #
@@ -116,8 +123,9 @@ def main():
   print("Copying ISO content...")
   try:
     call(["cp","-r",tmpdir+"/iso",tmpdir+"/newiso"])
-  except:
+  except Exception, e:
     print("ERROR: Cannot copy ISO content to "+tmpdir+"/iso")
+    print e
     exit(3)
 
   #
@@ -136,20 +144,21 @@ def main():
   if os.path.isdir(options.packages):
     try:
       call(["cp","-r",options.packages,tmpdir+"/newiso/Packages"])
-    except:
+    except Exception, e:
       print("ERROR: Cannot copy extra packages.")
+      print e
       exit(3)   
   
   # Add boot files
   print("Copying isolinux splash...")
-  if os.path.isdir(options.isolinuxsplash):
+  if os.path.isfile(options.isolinuxsplash):
     call(["cp",options.isolinuxsplash,tmpdir+"/newiso/isolinux"])
   else:
     print("WARNING: Cannot copy boot splash.")
   # grub customized in redhat-logos
     
   print("Copying isolinux.cfg...")
-  if os.path.isdir(options.isolinuxcfg):
+  if os.path.isfile(options.isolinuxcfg):
     call(["cp",options.isolinuxcfg,tmpdir+"/newiso/isolinux"])
   else:
     print("WARNING: Cannot copy isolinux.cfg")
@@ -158,9 +167,11 @@ def main():
   if updaterepo:
     print("Updating packages repository...")
     try:
-      call(["cd",tmpdir+"/newiso","&&","createrepo","-g","repodata/comps.xml","."])
-    except:
-      print("WARNING: Cannot create repository")
+      call(["cd",tmpdir+"/newiso","&&","createrepo","-g","repodata/comps.xml","."],shell=True)
+    except Exception, e:
+      print("ERROR: Cannot create repository")
+      print e
+      exit(3)
   else:
     print("Not updating packages repository.")
 
@@ -169,41 +180,66 @@ def main():
   try:
     call(["mkdir","-p",tmpdir+"/initrd.dir"])
     # Unpack
-    call(["cd",tmpdir+"/initrd.dir","&&","xz","--decompress","--format=lzma","--stout",tmpdir+"newiso/isolinux/initrd.img",
-          "|","cpio","--quiet","--iudm"])
+    call(["cd",tmpdir+"/initrd.dir","&&","xz","--decompress","--format=lzma","--stout",tmpdir+"iso/isolinux/initrd.img",
+          "|","cpio","--quiet","--iudm"],shell=True)
     # Brand .buildstamp
-    branding(tmpdir+"/initrd.dir/.buildstamp",options.name,options.version,options.bugs_url,options.arch)
+    branding(tmpdir+"/initrd.dir/.buildstamp",options.name,options.version,options.bugs_url,arch)
     # Repack
     call(["cd",tmpdir+"/initrd.dir","&&","find","./","|","cpio","--quiet","-H","newc","-o",
-          "|","xz","--format=lzma",">",tmpdir+"/newiso/isolinux/initrd.img"])
+          "|","xz","--format=lzma",">",tmpdir+"/newiso/isolinux/initrd.img"],shell=True)
     # Cleanup
     if options.cleanup:
       call(["rm","-rf",tmpdir+"/initrd.dir"])
-  except:
+  except Exception, e:
     print("ERROR: Cannot brand initrd")
+    print e
     exit(3)
 
 
   # Custom stage2
   print("Branding install.img...")
   try:
-    call(["mkdir","-p",tmpdir+"/initrd.dir"])
+    call(["mkdir","-p",tmpdir+"/install.dir"])
     # Unpack
-    call(["cd",tmpdir+"/initrd.dir","&&","xz","--decompress","--format=lzma","--stout",tmpdir+"newiso/isolinux/initrd.img",
-          "|","cpio","--quiet","--iudm"])
+    call(["cd",tmpdir+"/install.dir","&&","unsquashfs",tmpdir+"iso/images/install.img"],shell=True)
+
     # Brand .buildstamp
-    branding(tmpdir+"/initrd.dir/.buildstamp",options.name,options.version,options.bugs_url,options.arch)
+    branding(tmpdir+"/install.dir/.buildstamp",options.name,options.version,options.bugs_url,arch)
+    # Custom anaconda
+    if options.anaconda and os.path.isfile(options.anaconda):
+      call(["rm","-rf",tmpdir+"/install.dir/squashfs-root/usr/share/anaconda/pixmaps"])
+      call(["cd",tmpdir+"/install.dir/squashfs-root/","&&","rpm2cpio",os.path.abspath(options.anaconda),"|","cpio","--quiet","-iud"],shell=True)
+
+    # Custom redhat-logos
+    if options.redhatlogos and os.path.isfile(options.redhatlogos):
+      call(["cd",tmpdir+"/install.dir/squashfs-root/","&&","rpm2cpio",os.path.abspath(options.redhatlogos),"|","cpio","--quiet","-iud"],shell=True)
+
     # Repack
-    call(["cd",tmpdir+"/initrd.dir","&&","find","./","|","cpio","--quiet","-H","newc","-o",
-          "|","xz","--format=lzma",">",tmpdir+"/newiso/isolinux/initrd.img"])
-    # Cleanup
+    call(["cd",tmpdir+"/install.dir","&&","mksquashfs","squashfs-root","install.img"],shell=True)
+    call(["cd",tmpdir+"/install.dir","&&","mv","install.img",tmpdir+"/newiso/images/"],shell=True)
+
     if options.cleanup:
       call(["rm","-rf",tmpdir+"/initrd.dir"])
-  except:
-    print("ERROR: Cannot brand initrd")
+  except Exception, e:
+    print("ERROR: Cannot brand install.img")
+    print e
     exit(3) 
+
   # Custom release notes
+  print("Copying release notes...")
+  if os.path.isdir(options.relnotes):
+    call(["cp","-r",options.relnotes+"/RELEASE-NOTES*",tmpdir+"/newiso/"])
+
   # Create ISO
+  print("Creating ISO...")
+  try:
+    call(["mkisofs","-R","-J","-T","-b",tmpdir+"/newiso/isolinux/isolinux.bin","-c",tmpdir+"/newiso/isolinux/boot.cat",
+          "-no-emul-boot","-boot-load-size","4","-boot-info-table","-o",options.output,"."],cwd=tmpdir+"/newiso",shell=True)
+  except Exception, e:
+    print("ERROR: Cannot create ISO")
+    print e
+    exit(3)
+
   # Implant md5
   # Cleanup
 
