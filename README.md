@@ -1,7 +1,7 @@
-# elsix 
+# CENTOLLO 
 
-Python based tool to create CentOS ISO spins.
+Bash script to create CentOS based ISO spins.
 
-Based on FrameOS builder: 
+Based on FrameOS builder.
 
 

@@ -197,8 +197,216 @@
      <packagereq type='mandatory'>yum-plugin-fastestmirror</packagereq>
      <packagereq type='mandatory'>yum-presto</packagereq>
      <packagereq type='mandatory'>zlib</packagereq>
+     <packagereq type='mandatory'>abiquo-cloud-node</packagereq>
+     <packagereq type='mandatory'>qemu-kvm</packagereq>
+     <packagereq type='mandatory'>bridge-utils</packagereq>
    </packagelist> 
   </group>
+  
+
+  <group>
+    <id>abiquo-server</id>
+    <name>Abiquo Server</name>
+    <description>Abiquo Server Components</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">abiquo-server</packagereq>
+      <packagereq type="mandatory">abiquo-m</packagereq>
+      <packagereq type="mandatory">abiquo-api</packagereq>
+      <packagereq type="mandatory">redis</packagereq>
+      <packagereq type="mandatory">jdk</packagereq>
+      <packagereq type="mandatory">MariaDB-server</packagereq>
+      <packagereq type="mandatory">MariaDB-client</packagereq>
+      <packagereq type="mandatory">MariaDB-compat</packagereq>
+      <packagereq type="mandatory">rabbitmq-server</packagereq>
+      <packagereq type="mandatory">zookeeper</packagereq>
+    </packagelist>
+  </group>
+  
+  <group>
+    <id>abiquo-remote-services</id>
+    <name>Abiquo Remote Services</name>
+    <description>Abiquo Remote Services Components</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">abiquo-remote-services</packagereq>
+      <packagereq type="mandatory">jdk</packagereq>
+      <packagereq type="mandatory">redis</packagereq>
+    </packagelist>
+  </group>
+  
+  <group>
+    <id>abiquo-distributed</id>
+    <name>Abiquo Distributed</name>
+    <description>Abiquo Distributed Group</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="optional">abiquo-remote-services</packagereq>
+      <packagereq type="optional">abiquo-server</packagereq>
+      <packagereq type="optional">abiquo-v2v</packagereq>
+    </packagelist>
+  </group>
+ 
+<group>
+    <id>abiquo-monolithic</id>
+    <name>Abiquo Monolithic Install</name>
+    <description>Abiquo One Box setup</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">abiquo-pocsetup</packagereq>
+      <packagereq type="mandatory">jdk</packagereq>
+      <packagereq type="mandatory">redis</packagereq>
+      <packagereq type="mandatory">MariaDB-server</packagereq>
+      <packagereq type="mandatory">MariaDB-compat</packagereq>
+      <packagereq type="mandatory">MariaDB-client</packagereq>
+      <packagereq type="mandatory">rabbitmq-server</packagereq>
+    </packagelist>
+  </group>
+
+<group>
+    <id>abiquo-lvm-storage-server</id>
+    <name>Abiquo LVM Storage Server</name>
+    <description>Abiquo LVM Storage Server</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">jdk</packagereq>
+      <packagereq type="mandatory">abiquo-lvmiscsi</packagereq>
+    </packagelist>
+  </group>
+  
+  <group>
+    <id>abiquo-xen</id>
+    <name>Abiquo Xen</name>
+    <description>Abiquo Xen Cloud Node</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">xen</packagereq>
+      <packagereq type="mandatory">kernel-xen</packagereq>
+      <packagereq type="mandatory">abiquo-aim</packagereq>
+      <packagereq type="mandatory">curl</packagereq>
+      <packagereq type="mandatory">avahi</packagereq>
+      <packagereq type="mandatory">bridge-utils</packagereq>
+      <packagereq type="mandatory">abiquo-cloud-node</packagereq>
+    </packagelist>
+  </group>
+  
+  <group>
+    <id>abiquo-virtualbox</id>
+    <name>Abiquo VirtualBox</name>
+    <description>Abiquo VirtualBox Cloud Node</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">abiquo-virtualbox</packagereq>
+    </packagelist>
+  </group>
+  
+  <group>
+    <id>abiquo-kvm</id>
+    <name>Abiquo KVM</name>
+    <description>Abiquo KVM Cloud Node</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">kvm</packagereq>
+      <packagereq type="mandatory">kmod-kvm</packagereq>
+      <packagereq type="mandatory">abiquo-aim</packagereq>
+      <packagereq type="mandatory">curl</packagereq>
+      <packagereq type="mandatory">bridge-utils</packagereq>
+      <packagereq type="mandatory">avahi</packagereq>
+      <packagereq type="mandatory">abiquo-node-tools</packagereq>
+      <packagereq type="mandatory">abiquo-cloud-node</packagereq>
+    </packagelist>
+  </group>
+
+<group>
+    <id>abiquo-v2v</id>
+    <name>Abiquo V2V Conversion Services</name>
+    <description>Abiquo One Box setup</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">abiquo-v2v</packagereq>
+      <packagereq type="mandatory">jdk</packagereq>
+      <packagereq type="mandatory">qemu-img</packagereq>
+    </packagelist>
+</group>
+
+<group>
+    <id>abiquo-remote-repository</id>
+    <name>Abiquo Remote Repository</name>
+    <description>Installs an Abiquo Remote Repository</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">abiquo-template-repository</packagereq>
+    </packagelist>
+</group>
+
+<group>
+    <id>cloud-in-a-box</id>
+    <name>Cloud in a Box</name>
+    <description>Abiquo Cloud in a Box setup</description>
+    <default>true</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">abiquo-pocsetup</packagereq>
+      <packagereq type="mandatory">abiquo-lvmiscsi</packagereq>
+      <packagereq type="mandatory">jdk</packagereq>
+      <packagereq type="mandatory">kvm</packagereq>
+      <packagereq type="mandatory">kmod-kvm</packagereq>
+      <packagereq type="mandatory">abiquo-aim</packagereq>
+      <packagereq type="mandatory">curl</packagereq>
+      <packagereq type="mandatory">bridge-utils</packagereq>
+      <packagereq type="mandatory">avahi</packagereq>
+      <packagereq type="mandatory">abiquo-node-tools</packagereq>
+      <packagereq type="mandatory">redis</packagereq>
+      <packagereq type="mandatory">abiquo-cloud-node</packagereq>
+      <packagereq type="mandatory">MariaDB-server</packagereq>
+      <packagereq type="mandatory">MariaDB-client</packagereq>
+      <packagereq type="mandatory">MariaDB-compat</packagereq>
+      <packagereq type="mandatory">rabbitmq-server</packagereq>
+    </packagelist>
+</group>
+
+<group>
+    <id>abiquo-nfs-repository</id>
+    <name>Abiquo NFS Repository</name>
+    <description>Abiquo Local Repository</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">nfs-utils</packagereq>
+    </packagelist>
+</group>
+
+<group>
+    <id>abiquo-dhcp-relay</id>
+    <name>Abiquo DHCP Relay</name>
+    <description>Abiquo DHCP Relay</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">abiquo-dhcp-relay</packagereq>
+    </packagelist>
+</group>
+
+  <category>
+    <id>abiquo-components</id>
+    <name>Abiquo Components</name>
+    <description>Abiquo Components to install</description>
+    <grouplist>
+      <groupid>abiquo-server</groupid>
+      <groupid>abiquo-monolithic</groupid>
+      <groupid>abiquo-remote-services</groupid>
+    </grouplist>
+  </category>
 
 <category>
     <id>core</id>
