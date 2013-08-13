@@ -9,16 +9,16 @@ VERSION=3.0
 BUGS="http://support.abiquo.com"
 ARCH=x86_64
 
-BASEISO=./CentOS-6.4-x86_64-minimal.iso
+BASEISO="./CentOS-6.4-x86_64-minimal.iso"
 OUTPUT=abiquo-linux-$VERSION-preview-`date +%F-%H%M`.iso
-PACKAGES=./packages
-ISOLINUXCFG=./resources/isolinux.cfg
-COMPS=./resources/comps.xml
-SPLASH=./resources/splash.jpg
+PACKAGES="./packages"
+ISOLINUXCFG="./resources/isolinux.cfg"
+COMPS="./resources/comps.xml"
+SPLASH="./resources/splash.jpg"
 RELNOTES="./resources/release-notes*"
-ANACONDA="anaconda.rpm"
-RHLOGOS=./resources/abiquo-logos-ee-60.0.14-12.el6.abiquo.noarch.rpm
-ICONS=./resources/gnome-human.tar.gz
+ANACONDA="./packages/anaconda-ee-13.21.195-1.el6.1.abiquo.x86_64.rpm"
+RHLOGOS="./resources/abiquo-logos-ee-60.0.14-12.el6.abiquo.noarch.rpm"
+ICONS="./resources/gnome-human.tar.gz"
 COLOR="E5A843"
 
 TOOLS=(createrepo xz find cpio which mkisofs mksquashfs rpm2cpio repomanage implantisomd5)
@@ -29,7 +29,6 @@ umount $TMPDIR/iso &> /dev/null
 rm -rf $TMPDIR &> /dev/null
 }
 
-
 # Check root
 if [ "$(id -u)" != "0" ]; then
     echo "This script must be run as root" 1>&2
@@ -37,7 +36,6 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 # Check tools
-
 for i in ${TOOLS[@]}
 do 
     hash $i &> /dev/null
@@ -100,6 +98,15 @@ else
     echo "WARNING: Cannot copy isolinux.cfg"
 fi
 
+echo "Copying splash..."
+if [ -f $SPLASH ];then
+    cp $SPLASH $TMPDIR/newiso/isolinux/splash.jpg
+else
+    echo "WARNING: Cannot copy splash"
+fi
+
+
+
 echo "Branding initrd..."
 mkdir -p $TMPDIR/newiso/initrd.dir
 pushd $TMPDIR/newiso/initrd.dir >& /dev/null
@@ -142,10 +149,13 @@ popd >& /dev/null
 
 if [ -f $ANACONDA ];then
     echo "Installing anaconda..."
-    A_ANACONDA=`readlink -f $ RHLOGOS`
-    rm -rf squashfs-root/usr/share/anaconda/pixmaps
+    A_ANACONDA=`readlink -f $ANACONDA`
     pushd $TMPDIR/newiso/install.dir/squashfs-root >& /dev/null 
-    rpm2cpio $ANACONDA | cpio --quiet -iud
+    # Previous clean
+    rm -rf usr/share/anaconda/pixmaps
+    rm -rf usr/lib/anaconda
+    rm -rf $TMPDIR/newiso/images/updates.img
+    rpm2cpio $A_ANACONDA | cpio --quiet -iud
     popd >& /dev/null
 else
     echo "WARNING: Cannot install anaconda"
@@ -203,7 +213,8 @@ if [ $? -ne 0 ];then
     exit 1
 fi
 
-#cleanup
+# Unmount and clean
+cleanup
 
 END=$(date +%s)
 DIFF=$(( $END - $START ))
