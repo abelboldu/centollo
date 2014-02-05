@@ -9,7 +9,7 @@ VERSION=3.0
 BUGS="http://support.abiquo.com"
 ARCH=x86_64
 
-BASEISO="./CentOS-6.4-x86_64-minimal.iso"
+BASEISO="./CentOS-6.5-x86_64-minimal.iso"
 OUTPUT=abiquo-linux-$VERSION-preview-`date +%F-%H%M`.iso
 PACKAGES="./packages"
 ISOLINUXCFG="./resources/isolinux.cfg"
@@ -17,7 +17,7 @@ COMPS="./resources/comps.xml"
 SPLASH="./resources/splash.jpg"
 RELNOTES="./resources/release-notes*"
 ANACONDA="./packages/anaconda-ee-13.21.195-1.el6.1.abiquo.x86_64.rpm"
-RHLOGOS="./resources/abiquo-logos-ee-60.0.14-12.el6.abiquo.noarch.rpm"
+RHLOGOS="./resources/abiquo-logos-ee-60.0.14-14.el6.abiquo.noarch.rpm"
 ICONS="./resources/gnome-human.tar.gz"
 COLOR="E5A843"
 
@@ -44,6 +44,13 @@ do
 	exit 1
     fi
 done
+
+# Check for ionice and reduce disk priority
+hash ionice &> /dev/null
+if [ $? -eq 0 ];then
+    echo "Setting ionice to idle..."
+    ionice -c3 -p$$
+fi
 
 echo "Setting up..."
 START=$(date +%s)
@@ -215,6 +222,9 @@ fi
 
 # Unmount and clean
 cleanup
+
+
+chmod 664 $CWD/$OUTPUT
 
 END=$(date +%s)
 DIFF=$(( $END - $START ))
